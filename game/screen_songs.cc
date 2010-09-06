@@ -241,25 +241,35 @@ void ScreenSongs::draw() {
 void ScreenSongs::drawCovers() {
 	double spos = m_songs.currentPosition(); // This needs to be polled to run the animation
 	std::size_t ss = m_songs.size();
-	int baseidx = spos + 1.5; --baseidx; // Round correctly
-	double shift = spos - baseidx;
-	for (int i = -2; i < 5; ++i) {
-		if (baseidx + i < 0 || baseidx + i >= int(ss)) continue;
-		Song& song = m_songs[baseidx + i];
-		Surface& s = getCover(song);
-		// Calculate dimensions for cover and instrument markers
-		double diff = (i == 0 ? (0.5 - fabs(shift)) * 0.07 : 0.0);
-		double y = 0.27 + 0.5 * diff;
-		s.dimensions.middle(-0.2 + 0.17 * (i - shift)).bottom(y - 0.2 * diff).fitInside(0.14 + diff, 0.14 + diff);
-		// Draw the cover normally
-		s.draw();
-		// Draw the reflection
-		glutil::PushMatrix m;
-		glTranslatef(0.0f, 2.0 * y, 0.0f);
-		glScalef(1.0f, -1.0f, 1.0f);
-		glColor4f(1.0f, 1.0f, 1.0f, 0.4f);
-		s.draw();
-		glColor3f(1.0f, 1.0f, 1.0f);
+	glutil::PushMatrix m0;
+	glTranslatef(0.0f, 0.0f, -1.5f);
+	// A quick hack to prototype z-layered rendering
+	for (int z = 0; z < 3; ++z) {
+		float fudge = (z + 1) * 0.33334;
+		double fudgedpos = spos;
+		for (int i = z; i < 2; ++i) fudgedpos = 2.5 + fudgedpos / ss;
+		int baseidx = int(fudgedpos + 1.5) - 1; // Round correctly
+		double shift = fudgedpos - baseidx;
+		for (int i = -5; i < 8; ++i) {
+			if (baseidx + i < 0 || baseidx + i >= int(ss)) continue;
+			Song& song = m_songs[baseidx + i];
+			Surface& s = getCover(song);
+			// Calculate dimensions for cover and instrument markers
+			double diff = (fudge >= 1.0 && i == 0 ? (0.5 - fabs(shift)) * 0.07 : 0.0);
+			double y = 0.27 + 0.5 * diff;
+			s.dimensions.middle(-0.2 + 0.17 * (i - shift)).bottom(y - 0.2 * diff).fitInside(0.14 + diff, 0.14 + diff);
+			// Draw the cover normally
+			glColor4f(1.0f * fudge, 1.0f * fudge, 1.0f * fudge, fudge);
+			s.draw();
+			// Draw the reflection
+			glutil::PushMatrix m;
+			glTranslatef(0.0f, 2.0 * y, 0.0f);
+			glScalef(1.0f, -1.0f, 1.0f);
+			glColor4f(1.0f * fudge, 1.0f * fudge, 1.0f * fudge, 0.4f * fudge);
+			s.draw();
+			glColor3f(1.0f, 1.0f, 1.0f);
+		}
+		glTranslatef(0.0f, 0.0f, 0.5f);
 	}
 }
 
